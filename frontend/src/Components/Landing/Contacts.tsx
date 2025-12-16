@@ -1,12 +1,10 @@
-import React from "react";
 import ContactBook from "../../assets/contact-book.png";
 
 const Contacts = () => {
   return (
-    <section id="contact" className="bg-[#FDD493] py-20">
+    <section id="contact" className="bg-[#FDD493] py-20 ">
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         
-        {/* Contact Form */}
         <div>
           <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
           <p className="text-gray-700 mb-8">
@@ -45,7 +43,6 @@ const Contacts = () => {
           </form>
         </div>
 
-        {/* Illustration */}
         <div className="flex justify-center">
           <img
             src={ContactBook}
@@ -53,7 +50,6 @@ const Contacts = () => {
             className="w-[clamp(10rem,50%,18rem)] max-w-md object-contain"
           />
         </div>
-
       </div>
     </section>
   );

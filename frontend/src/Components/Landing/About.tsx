@@ -1,4 +1,3 @@
-import React from "react";
 import Manage from "../../assets/management.png";
 
 const About = () => {
@@ -6,7 +5,6 @@ const About = () => {
     <section id="about" className="bg-[#c3e6a1] py-20">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center px-8 gap-12">
         
-        {/* Image */}
         <div className="flex-1 flex justify-center">
           <img
             src={Manage}
@@ -15,7 +13,6 @@ const About = () => {
           />
         </div>
 
-        {/* Text */}
         <div className="flex-1 text-center lg:text-left">
           <h2 className="text-4xl font-bold mb-6">About Evently</h2>
           <p className="text-gray-800 text-lg leading-relaxed">
@@ -26,7 +23,6 @@ const About = () => {
             organized in one place.
           </p>
         </div>
-
       </div>
     </section>
   );

@@ -1,8 +1,7 @@
-import React from "react";
-import Time from "../../assets/time.png";
-import Rocket from "../../assets/rocket.png";
-import Smile from "../../assets/smile.png";
-import Check from "../../assets/check.png";
+import Time from '../../assets/time.png';
+import Rocket from '../../assets/rocket.png';
+import Smile from '../../assets/smile.png';
+import Check from '../../assets/check.png';
 
 const Benefits = () => {
   const benefits = [
