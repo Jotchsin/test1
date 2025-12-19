@@ -13,8 +13,8 @@ import CreateEvent from "./Components/Dashboard/Create";
 import DashboardNavbar from "./Components/Dashboard/NavbarInside";
 import ManageEvent from "./Components/Dashboard/manage";
 import TrackEvent from "./Components/Dashboard/track";
-import ScannerEvent from "./Components/Dashboard/qrscanner"
-
+import ScannerEvent from "./Components/Dashboard/qrscanner";
+import RSVP from "./Components/RSVP";
 const DashboardLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,6 +47,7 @@ const App = () => {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/rsvp/:eventId" element={<RSVP />} />
 
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create" element={<CreateEvent />} />

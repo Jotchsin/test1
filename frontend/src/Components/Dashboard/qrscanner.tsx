@@ -5,9 +5,9 @@ import DashboardNavbar from "./NavbarInside";
 QrScanner.WORKER_PATH = "/qr-scanner-worker.min.js";
 
 type QRData = {
-  name?: string;
+  eventId?: number;
   email?: string;
-  rsvp?: string;
+  response?: string;
   [key: string]: unknown;
 };
 
@@ -18,6 +18,31 @@ export default function ScannerEvent() {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<QrScanner | null>(null);
+
+  const markAttendance = (eventId: number, email: string) => {
+    const publishedEvents = JSON.parse(localStorage.getItem("publishedEvents") || "[]");
+    const updatedEvents = publishedEvents.map((event: any) => {
+      if (event.id === eventId) {
+        const attendees = event.attendees || [];
+        const alreadyAttended = attendees.some((a: any) => a.email === email);
+        if (!alreadyAttended) {
+          attendees.push({
+            name: email.split('@')[0], // Simple name from email
+            email,
+            status: "Present"
+          });
+
+          // Initialize participants array if it doesn't exist, then increment attendance count
+          const participants = event.participants || [0];
+          participants[0] = (participants[0] || 0) + 1;
+          return { ...event, attendees, participants };
+        }
+        return { ...event, attendees };
+      }
+      return event;
+    });
+    localStorage.setItem("publishedEvents", JSON.stringify(updatedEvents));
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -38,6 +63,11 @@ export default function ScannerEvent() {
             try {
               const parsed = JSON.parse(text);
               setParsedData(parsed);
+
+              // Mark attendance if it's RSVP QR
+              if (parsed.eventId && parsed.email) {
+                markAttendance(parsed.eventId, parsed.email);
+              }
             } catch {
               setParsedData(null);
             }
@@ -106,9 +136,20 @@ export default function ScannerEvent() {
           {!error && parsedData ? (
             <div className="bg-white/80 backdrop-blur p-5 rounded-xl shadow-md text-left space-y-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-2">Scanned Information:</h2>
-              <p className="text-gray-700"><span className="font-medium">Full Name:</span> {parsedData.name ?? "N/A"}</p>
-              <p className="text-gray-700"><span className="font-medium">Email:</span> {parsedData.email ?? "N/A"}</p>
-              <p className="text-gray-700"><span className="font-medium">RSVP Answer:</span> {parsedData.rsvp ?? "N/A"}</p>
+              {parsedData.eventId ? (
+                <>
+                  <p className="text-gray-700"><span className="font-medium">Event ID:</span> {parsedData.eventId}</p>
+                  <p className="text-gray-700"><span className="font-medium">Email:</span> {parsedData.email ?? "N/A"}</p>
+                  <p className="text-gray-700"><span className="font-medium">RSVP:</span> {parsedData.response ?? "N/A"}</p>
+                  <p className="text-green-600 font-medium">✅ Attendance marked!</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-700"><span className="font-medium">Name:</span> {parsedData.name ?? "N/A"}</p>
+                  <p className="text-gray-700"><span className="font-medium">Email:</span> {parsedData.email ?? "N/A"}</p>
+                  <p className="text-gray-700"><span className="font-medium">RSVP:</span> {parsedData.rsvp ?? "N/A"}</p>
+                </>
+              )}
             </div>
           ) : !error && result ? (
             <div className="bg-white/80 backdrop-blur p-4 rounded-lg shadow text-left">

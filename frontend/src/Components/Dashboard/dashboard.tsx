@@ -36,49 +36,30 @@ const Dashboard = () => {
   const eventsRef = useRef<Event[]>([]);
   const historyRef = useRef<Event[]>([]);
 
-  /* =============================
-     LOAD EVENTS + FAKE RSVP DATA
-  ============================== */
   useEffect(() => {
     const storedEvents: Event[] = JSON.parse(
       localStorage.getItem("publishedEvents") || "[]"
     );
 
+    // Use actual respondents data from RSVP system, don't add fake data
     const enrichedEvents = storedEvents.map((event) => {
-      if (event.rsvp && event.respondents && event.participants) {
-        return event;
-      }
+      // Ensure respondents array exists (initialize if not present)
+      const respondents = event.respondents || [];
 
-      const fakeRespondents: Respondent[] = [
-        { email: "john@example.com", response: "Yes" },
-        { email: "jane@example.com", response: "Yes" },
-        { email: "carlos@example.com", response: "No" },
-        { email: "alex@example.com", response: "Yes" },
-      ];
-
-      const yesCount = fakeRespondents.filter(
-        (r) => r.response === "Yes"
-      ).length;
-      const noCount = fakeRespondents.filter(
-        (r) => r.response === "No"
-      ).length;
+      // Calculate RSVP counts from actual respondents
+      const yesCount = respondents.filter(r => r.response === "Yes").length;
+      const noCount = respondents.filter(r => r.response === "No").length;
 
       return {
         ...event,
-        respondents: fakeRespondents,
+        respondents: respondents,
         rsvp: [yesCount, noCount],
-        participants:
-          event.participants || [
-            Math.floor(Math.random() * 20) + 5,
-            Math.floor(Math.random() * 20) + 5,
-            Math.floor(Math.random() * 20) + 5,
-          ],
+        // Don't initialize participants - keep as undefined until someone scans QR
       };
     });
 
     setEvents(enrichedEvents);
     eventsRef.current = enrichedEvents;
-    localStorage.setItem("publishedEvents", JSON.stringify(enrichedEvents));
 
     const storedHistory = JSON.parse(
       localStorage.getItem("eventHistory") || "[]"
@@ -148,8 +129,9 @@ const Dashboard = () => {
   };
 
   const handleCopyLink = (id: number) => {
-    navigator.clipboard.writeText(`http://localhost:3000/event/${id}`);
-    alert("Event link copied!");
+    const rsvpLink = `${window.location.origin}/rsvp/${id}`;
+    navigator.clipboard.writeText(rsvpLink);
+    alert("RSVP link copied!");
   };
 
   const handleClearHistory = () => {
@@ -178,11 +160,11 @@ const Dashboard = () => {
           <div className="col-span-2 space-y-6">
             <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md p-4">
               <h2 className="font-semibold text-lg mb-3">
-                List of Published Events
+                Published Events
               </h2>
 
               {events.length === 0 ? (
-                <p className="text-gray-500">No events published yet.</p>
+                <p className="text-gray-500">No events published yet. Go to Manage to publish events.</p>
               ) : (
                 events.map((event) => (
                   <div
@@ -205,6 +187,7 @@ const Dashboard = () => {
                           e.stopPropagation();
                           handleCopyLink(event.id);
                         }}
+                        title="Copy RSVP Link"
                       />
                       <FiTrash2
                         onClick={(e) => {
@@ -250,7 +233,7 @@ const Dashboard = () => {
                 Participants Graph
               </h2>
 
-              {selectedEvent?.participants ? (
+              {selectedEvent?.participants && selectedEvent.participants.length > 0 ? (
                 <ResponsiveContainer width="100%" height="80%">
                   <BarChart
                     data={selectedEvent.participants.map((p, i) => ({
@@ -266,7 +249,7 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               ) : (
                 <p className="text-gray-400 text-center mt-10">
-                  Click an event to view graph.
+                  No attendance data yet.
                 </p>
               )}
             </div>
@@ -274,7 +257,7 @@ const Dashboard = () => {
             <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md p-4 h-64">
               <h2 className="font-semibold text-lg mb-3">RSVP Chart</h2>
 
-              {selectedEvent?.rsvp ? (
+              {selectedEvent?.rsvp && (selectedEvent.rsvp[0] > 0 || selectedEvent.rsvp[1] > 0) ? (
                 <ResponsiveContainer width="100%" height="80%">
                   <BarChart
                     data={[
@@ -290,7 +273,7 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               ) : (
                 <p className="text-gray-400 text-center mt-10">
-                  Click an event to view RSVP chart.
+                  No RSVPs yet.
                 </p>
               )}
             </div>

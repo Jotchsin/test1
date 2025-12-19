@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 interface LoginForm {
   email: string;
@@ -27,31 +28,28 @@ const Login: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // 🔐 Fake login (frontend-only)
-    setTimeout(() => {
-      if (!form.email || !form.password) {
-        setError("Email and password are required.");
-        setLoading(false);
-        return;
-      }
-
-      const fakeUser: User = {
-        id: 1,
-        name: "Demo User",
+    try {
+      const response = await axios.post('http://localhost:8000/api/login', {
         email: form.email,
-      };
+        password: form.password,
+      });
 
+      const user = response.data.user;
       localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify(fakeUser));
+      localStorage.setItem("user", JSON.stringify(user));
 
       setLoading(false);
       navigate("/dashboard");
-    }, 800);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.errors?.email?.[0] || err.response?.data?.message || "Login failed";
+      setError(errorMessage);
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {

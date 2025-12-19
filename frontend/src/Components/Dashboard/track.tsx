@@ -41,24 +41,7 @@ export default function TrackPage() {
 
   useEffect(() => {
     const storedEvents = JSON.parse(localStorage.getItem("publishedEvents") || "[]");
-    const withMockData = storedEvents.map((e: Event) => ({
-      ...e,
-      attendees:
-        e.attendees ||
-        [
-          { name: "John Doe", email: "john@example.com", status: "Present" },
-          { name: "Jane Smith", email: "jane@example.com", status: "Present" },
-          { name: "Carlos Reyes", email: "carlos@example.com", status: "Absent" },
-        ],
-      respondents:
-        e.respondents ||
-        [
-          { email: "clarkbuyan@gmail.com", response: "Yes" },
-          { email: "genntimtim@gmail.com", response: "No" },
-          { email: "jMccaslin@gmail.com", response: "Yes" },
-        ],
-    }));
-    setEvents(withMockData);
+    setEvents(storedEvents);
   }, []);
 
   const toggleEvent = (eventId: number) => {
@@ -199,32 +182,66 @@ export default function TrackPage() {
                         className="mt-4 bg-white rounded-xl shadow p-4 border border-gray-200"
                       >
                         <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                          📋 RSVP Respondents
+                        </h3>
+                        {event.respondents && event.respondents.length > 0 ? (
+                          <table className="w-full border-collapse mb-6">
+                            <thead>
+                              <tr className="bg-gray-100 text-gray-600 text-sm">
+                                <th className="p-2 text-left border-b">Email</th>
+                                <th className="p-2 text-left border-b">Response</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {event.respondents.map((r, i) => (
+                                <tr key={i} className="text-sm text-gray-700">
+                                  <td className="p-2 border-b">{r.email}</td>
+                                  <td
+                                    className={`p-2 border-b font-medium ${
+                                      r.response === "Yes" ? "text-green-600" : "text-red-500"
+                                    }`}
+                                  >
+                                    {r.response}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-sm mb-6">No respondents yet.</p>
+                        )}
+
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
                           🧾 Attendee List
                         </h3>
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr className="bg-gray-100 text-gray-600 text-sm">
-                              <th className="p-2 text-left border-b">Name</th>
-                              <th className="p-2 text-left border-b">Email</th>
-                              <th className="p-2 text-left border-b">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {event.attendees?.map((a, i) => (
-                              <tr key={i} className="text-sm text-gray-700">
-                                <td className="p-2 border-b">{a.name}</td>
-                                <td className="p-2 border-b">{a.email}</td>
-                                <td
-                                  className={`p-2 border-b font-medium ${
-                                    a.status === "Present" ? "text-green-600" : "text-red-500"
-                                  }`}
-                                >
-                                  {a.status}
-                                </td>
+                        {event.attendees && event.attendees.length > 0 ? (
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr className="bg-gray-100 text-gray-600 text-sm">
+                                <th className="p-2 text-left border-b">Name</th>
+                                <th className="p-2 text-left border-b">Email</th>
+                                <th className="p-2 text-left border-b">Status</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {event.attendees.map((a, i) => (
+                                <tr key={i} className="text-sm text-gray-700">
+                                  <td className="p-2 border-b">{a.name}</td>
+                                  <td className="p-2 border-b">{a.email}</td>
+                                  <td
+                                    className={`p-2 border-b font-medium ${
+                                      a.status === "Present" ? "text-green-600" : "text-red-500"
+                                    }`}
+                                  >
+                                    {a.status}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No attendees yet.</p>
+                        )}
                       </div>
                     )}
 
@@ -232,28 +249,32 @@ export default function TrackPage() {
                       <h3 className="text-sm text-gray-700 font-semibold mb-2">
                         List of Respondents (Yes / No)
                       </h3>
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-gray-50 text-gray-600 text-sm">
-                            <th className="p-2 text-left border-b">Email</th>
-                            <th className="p-2 text-left border-b">Response</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {event.respondents?.map((r, i) => (
-                            <tr key={i} className="text-sm text-gray-700">
-                              <td className="p-2 border-b">{r.email}</td>
-                              <td
-                                className={`p-2 border-b font-medium ${
-                                  r.response === "Yes" ? "text-green-600" : "text-red-500"
-                                }`}
-                              >
-                                {r.response}
-                              </td>
+                      {event.respondents && event.respondents.length > 0 ? (
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 text-gray-600 text-sm">
+                              <th className="p-2 text-left border-b">Email</th>
+                              <th className="p-2 text-left border-b">Response</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {event.respondents.map((r, i) => (
+                              <tr key={i} className="text-sm text-gray-700">
+                                <td className="p-2 border-b">{r.email}</td>
+                                <td
+                                  className={`p-2 border-b font-medium ${
+                                    r.response === "Yes" ? "text-green-600" : "text-red-500"
+                                  }`}
+                                >
+                                  {r.response}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No respondents yet.</p>
+                      )}
                     </div>
                   </div>
                 )}

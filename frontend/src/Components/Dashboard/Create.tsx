@@ -45,15 +45,26 @@ const CreateEvent: React.FC = () => {
       photo,
     };
 
-    const existingEvents = JSON.parse(localStorage.getItem("events") || "[]");
+    let existingEvents = [];
+    try {
+      existingEvents = JSON.parse(localStorage.getItem("events") || "[]");
+    } catch (e) {
+      console.error("Error loading existing events:", e);
+    }
 
     const updatedEvents = [...existingEvents, newEvent];
 
-    localStorage.setItem("events", JSON.stringify(updatedEvents));
-
-    alert(`✅ Event "${eventName}" created successfully!`);
+    try {
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
+    } catch (e) {
+      console.error("Error saving event:", e);
+      alert("Error saving event. Please try again.");
+      return;
+    }
 
     navigate("/manage");
+    
+    alert(`✅ Event "${eventName}" created successfully!`);
   };
 
   return (

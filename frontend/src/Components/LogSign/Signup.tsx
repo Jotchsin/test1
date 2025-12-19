@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 
 interface SignupForm {
   name: string;
@@ -31,43 +32,30 @@ const Signup: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // 🔐 Frontend-only validation
-    setTimeout(() => {
-      if (
-        !form.name ||
-        !form.email ||
-        !form.password ||
-        !form.password_confirmation
-      ) {
-        setError("All fields are required.");
-        setLoading(false);
-        return;
-      }
-
-      if (form.password !== form.password_confirmation) {
-        setError("Passwords do not match.");
-        setLoading(false);
-        return;
-      }
-
-      // ✅ Mock successful signup
-      const fakeUser: User = {
-        id: Date.now(),
+    try {
+      const response = await axios.post('http://localhost:8000/api/register', {
         name: form.name,
         email: form.email,
-      };
+        password: form.password,
+        password_confirmation: form.password_confirmation,
+      });
 
+      const user = response.data.user;
       localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify(fakeUser));
+      localStorage.setItem("user", JSON.stringify(user));
 
       setLoading(false);
       navigate("/dashboard");
-    }, 900);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.errors?.email?.[0] || err.response?.data?.errors?.name?.[0] || err.response?.data?.message || "Registration failed";
+      setError(errorMessage);
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignup = () => {

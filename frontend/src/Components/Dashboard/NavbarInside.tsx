@@ -8,7 +8,13 @@ const DashboardNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const userName = localStorage.getItem("user") || "Clark Buyan";
+  const userData = localStorage.getItem("user");
+  let userName = "Clark Buyan";
+  try {
+    userName = userData ? JSON.parse(userData).name : "Clark Buyan";
+  } catch (e) {
+    console.error("Error parsing user data:", e);
+  }
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
