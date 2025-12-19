@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axiosClient from "../../api/axiosClient";
 import { Trash2, Image as ImageIcon } from "lucide-react";
 import DashboardNavbar from "./NavbarInside";
 
@@ -20,12 +21,44 @@ const ManageEvent: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
   useEffect(() => {
-    const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-    setEvents(storedEvents);
+    const fetchEvents = async () => {
+      try {
+        const res = await axiosClient.get("/events");
+        const apiEvents = res.data || [];
+
+        const mapped = apiEvents.map((e: any) => ({
+          id: e.id,
+          name: e.eventName,
+          photo: e.photoUrl || (e.eventPhoto ? `/storage/${e.eventPhoto}` : undefined),
+          location: e.eventLocation,
+          date: e.eventDate,
+          time: e.eventTime,
+          duration: e.eventDuration,
+          capacity: e.eventCapacity ? String(e.eventCapacity) : "",
+          type: e.eventType,
+          visibility: e.eventVisibility,
+          description: e.eventDescription,
+        }));
+
+        setEvents(mapped);
+        localStorage.setItem("events", JSON.stringify(mapped));
+      } catch (err) {
+        console.error("Failed fetching events:", err);
+        setPopupMessage("⚠️ Failed to fetch events from server. Using local cache.");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 3000);
+        // fallback to localStorage if API fails
+        const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+        setEvents(storedEvents);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   const handleSelect = (event: Event) => {
@@ -34,10 +67,17 @@ const ManageEvent: React.FC = () => {
   };
 
   const handleDelete = (id: number) => {
-    const updated = events.filter((e) => e.id !== id);
-    setEvents(updated);
-    localStorage.setItem("events", JSON.stringify(updated));
-    if (selectedEvent?.id === id) setSelectedEvent(null);
+    (async () => {
+      try {
+        await axiosClient.delete(`/events/${id}`);
+        const updated = events.filter((e) => e.id !== id);
+        setEvents(updated);
+        localStorage.setItem("events", JSON.stringify(updated));
+        if (selectedEvent?.id === id) setSelectedEvent(null);
+      } catch (err) {
+        alert("Failed to delete event on server.");
+      }
+    })();
   };
 
   const handleEditToggle = () => setIsEditing(true);
@@ -47,13 +87,55 @@ const ManageEvent: React.FC = () => {
     const updatedEvents = events.map((e) =>
       e.id === selectedEvent.id ? selectedEvent : e
     );
-    setEvents(updatedEvents);
-    localStorage.setItem("events", JSON.stringify(updatedEvents));
-    setIsEditing(false);
 
-    setPopupMessage("✅ Changes Saved!");
-    setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 2000);
+    (async () => {
+      try {
+        // if a new file was selected, send multipart form data
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append("eventName", selectedEvent.name || "");
+          formData.append("eventLocation", selectedEvent.location || "");
+          formData.append("eventDate", selectedEvent.date || "");
+          formData.append("eventTime", selectedEvent.time || "");
+          formData.append("eventDuration", selectedEvent.duration || "");
+          formData.append("eventCapacity", selectedEvent.capacity || "");
+          formData.append("eventType", selectedEvent.type || "");
+          formData.append("eventVisibility", selectedEvent.visibility || "public");
+          formData.append("eventDescription", selectedEvent.description || "");
+          formData.append("eventPhoto", selectedFile);
+
+          // Laravel may accept PUT with multipart; using POST with _method override ensures compatibility
+          formData.append("_method", "PUT");
+
+          await axiosClient.post(`/events/${selectedEvent.id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } else {
+          await axiosClient.put(`/events/${selectedEvent.id}`, {
+            eventName: selectedEvent.name,
+            eventLocation: selectedEvent.location,
+            eventDate: selectedEvent.date,
+            eventTime: selectedEvent.time,
+            eventDuration: selectedEvent.duration,
+            eventCapacity: selectedEvent.capacity ? Number(selectedEvent.capacity) : null,
+            eventType: selectedEvent.type,
+            eventVisibility: selectedEvent.visibility,
+            eventDescription: selectedEvent.description,
+          });
+        }
+
+        setEvents(updatedEvents);
+        localStorage.setItem("events", JSON.stringify(updatedEvents));
+        setIsEditing(false);
+        setSelectedFile(null);
+
+        setPopupMessage("✅ Changes Saved!");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+      } catch (err) {
+        alert("Failed to update event on server.");
+      }
+    })();
   };
 
   const handleChange = (field: keyof Event, value: string) => {
@@ -65,11 +147,9 @@ const ManageEvent: React.FC = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      handleChange("photo", reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    handleChange("photo", url);
   };
 
   const handlePublish = () => {

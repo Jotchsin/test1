@@ -2,11 +2,13 @@ import React, { useState, useRef, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Clock, MapPin, Upload, Globe } from "lucide-react";
 import DashboardNavbar from "./NavbarInside";
+import axiosClient from "../../api/axiosClient";
 
 const CreateEvent: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
+  const [rawFile, setRawFile] = useState<File | null>(null);
   const [eventName, setEventName] = useState("");
-  const [location, setLocation] = useState("");
+  const [eventLocation, setLocation] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("1 Hour");
@@ -22,10 +24,13 @@ const CreateEvent: React.FC = () => {
 
   const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setPhoto(URL.createObjectURL(file));
+    if (file) {
+      setRawFile(file);
+      setPhoto(URL.createObjectURL(file));
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!eventName.trim()) {
       alert("⚠️ Please enter an event name before creating!");
       return;
@@ -34,7 +39,7 @@ const CreateEvent: React.FC = () => {
     const newEvent = {
       id: Date.now(),
       name: eventName,
-      location,
+      eventLocation,
       date,
       time,
       duration,
@@ -45,16 +50,38 @@ const CreateEvent: React.FC = () => {
       photo,
     };
 
-    const existingEvents = JSON.parse(localStorage.getItem("events") || "[]");
+    // Use FormData so we can send the photo file
+      const formData = new FormData();
+      formData.append('eventName', eventName);
+      formData.append('eventLocation', eventLocation);
+      formData.append('eventDate', date);
+      formData.append('eventTime', time);
+      formData.append('eventDuration', duration);
+      formData.append('eventCapacity', capacity);
+      formData.append('eventType', eventType);
+      formData.append('eventVisibility', isPublic ? 'public' : 'private');
+      formData.append('eventDescription', description);
+      
+      if (rawFile) {
+        formData.append('eventPhoto', rawFile); // Matches your migration column
+      }
 
-    const updatedEvents = [...existingEvents, newEvent];
 
-    localStorage.setItem("events", JSON.stringify(updatedEvents));
+      console.log("FormData Contents:", Object.fromEntries(formData.entries()));
 
-    alert(`✅ Event "${eventName}" created successfully!`);
+      try {
+        // This sends the data to your Laravel route
+        await axiosClient.post('/events', formData);
+        alert(`✅ Event "${eventName}" created successfully!`); 
+        navigate("/manage"); 
+      } catch (error) {
+        alert("❌ Error saving to database.");
+        navigate("/create");
+      }
 
-    navigate("/manage");
+    
   };
+
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -123,7 +150,7 @@ const CreateEvent: React.FC = () => {
                   ref={locationRef}
                   type="text"
                   placeholder="Enter location"
-                  value={location}
+                  value={eventLocation}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full border rounded-md p-2 pl-9 shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
                 />
